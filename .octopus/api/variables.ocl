@@ -1,0 +1,51 @@
+variable "Octopus.Azure.Account" {
+    type = "AzureAccount"
+
+    value "octopetshop-azure-subscription" {
+        description = ""
+    }
+}
+
+variable "Project.CleanedEnvironmentName" {
+    value "#{Octopus.Environment.Name | Replace \"[^a-zA-Z]+\" \"-\" | ToLower}" {}
+}
+
+variable "Project.CleanedSpaceName" {
+    value "#{Octopus.Space.Name | Replace \"[^a-zA-Z]+\" \"-\" | ToLower}" {}
+}
+
+variable "Project.Database.Name" {
+    value "#{Project.CleanedSpaceName | Replace \"-\" \"_\"}_#{Project.CleanedEnvironmentName | Replace \"-\" \"_\"}_octopub" {}
+}
+
+variable "spec:template:spec:containers:0:env:0:value" {
+    value "#{Azure.MySql.Server.Name}" {}
+}
+
+variable "spec:template:spec:containers:0:env:1:value" {
+    value "#{Azure.MySql.Admin.User}" {}
+}
+
+variable "spec:template:spec:containers:0:env:3:value" {
+    value "#{Project.Database.Name}" {}
+}
+
+variable "spec:template:spec:containers:0:image" {
+    value "registry.gitlab.com/octopus_samples/octopublite/octopublite-api:#{Octopus.Release.Number}" {}
+}
+
+variable "spec:template:spec:containers:0:env:2:value" {
+    value "#{Azure.MySql.Admin.Password}" {
+        environment = ["development"]
+    }
+
+    value "#{Azure.MySql.Admin.Password}" {
+        description = ""
+        environment = ["test"]
+    }
+
+    value "#{Azure.MySql.Admin.Password}" {
+        description = ""
+        environment = ["production"]
+    }
+}

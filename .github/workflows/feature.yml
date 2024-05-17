@@ -1,0 +1,80 @@
+name: Feature Branch
+
+on:
+  push:
+    branches:    
+      - '*'         # matches every branch that doesn't contain a '/'
+      - '*/*'       # matches every branch containing a single '/'
+      - '**'        # matches every branch
+      - '!main'   # excludes master
+
+env:
+  OCTOPUS_URL: ${{ secrets.OCTOPUS_URL }}
+  OCTOPUS_API_KEY: ${{ secrets.OCTOPUS_API_KEY }}
+  OCTOPUS_SPACE: ${{ secrets.OCTOPUS_SPACE }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      
+      - name: Set Version
+        run: echo "PACKAGE_VERSION=$(date +'%Y.%m.%d').$GITHUB_RUN_NUMBER-beta" >> $GITHUB_ENV
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker API image
+        run: docker build -f ./api/Dockerfile -t adamoctoclose/octoretail-api:${{ env.PACKAGE_VERSION }} ./api
+
+      - name: Build Docker Frontend image
+        run: docker build -f ./frontend/Dockerfile -t adamoctoclose/octoretail-frontend:${{ env.PACKAGE_VERSION }} ./frontend
+
+      - name: Push Docker API image to Docker Hub
+        run: docker push adamoctoclose/octoretail-api:${{ env.PACKAGE_VERSION }}
+
+      - name: Push Docker Front image to Docker Hub
+        run: docker push adamoctoclose/octoretail-frontend:${{ env.PACKAGE_VERSION }}
+
+      - name: Package Database Changes
+        uses: OctopusDeploy/create-zip-package-action@v3.0.2
+        with:
+          package_id: octoretail-database
+          version: ${{ env.PACKAGE_VERSION }}
+          base_path: mysql
+          files: |
+           **/*.sql
+          output_folder: ./packaging
+
+      - name: Package Database Chages
+        uses: OctopusDeploy/push-package-action@v3.0.4
+        with:
+          packages: ./packaging/octoretail-database.${{ env.PACKAGE_VERSION }}.zip
+
+      - name: Create Octopus Release
+        uses: OctopusDeploy/create-release-action@v3
+        with: 
+          project: eStore Database
+          release_number: ${{ env.PACKAGE_VERSION }}
+          
+      - name: Create Octopus Release
+        uses: OctopusDeploy/create-release-action@v3
+        with: 
+          project: eStore Frontend
+          release_number: ${{ env.PACKAGE_VERSION }}
+          git_ref: main
+          
+      - name: Create Octopus Release
+        uses: OctopusDeploy/create-release-action@v3
+        with: 
+          project: eStore Payment API
+          release_number: ${{ env.PACKAGE_VERSION }}
+          git_ref: main
+        

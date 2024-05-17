@@ -1,0 +1,18 @@
+frontend:
+  trigger:
+    include: frontend/.gitlab-ci.yml
+    strategy: depend
+  rules:
+    - changes: [frontend/*]
+api:
+  trigger:
+    include: api/.gitlab-ci.yml
+    strategy: depend
+  rules:
+    - changes: [api/*]
+database:
+  trigger:
+    include: mysql/.gitlab-ci.yml
+    strategy: depend
+  rules:
+    - changes: [mysql/*]

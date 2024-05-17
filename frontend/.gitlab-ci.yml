@@ -1,0 +1,67 @@
+stages:
+  - set-version
+  - build
+  - deploy_development
+  - deploy_test
+  - deploy_production
+
+
+set-version:
+  stage: set-version
+  script:
+    - dayOfYear=$(date +%j)
+    - hour=$(date +%H)
+    - minutes=$(date +%M)
+    - seconds=$(date +%S)
+    - year=$(date +%y)
+    - echo "1.0.$year$dayOfYear.$hour$minutes$seconds" >> version.txt
+  artifacts:
+    paths:
+      [ version.txt ]
+
+build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - VERSION_NUMBER=$(cat version.txt) 
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $CI_REGISTRY_IMAGE/octopublite-frontend:$VERSION_NUMBER -f ./frontend/Dockerfile ./frontend
+    - docker push $CI_REGISTRY_IMAGE/octopublite-frontend:$VERSION_NUMBER
+
+deploy_development:
+  stage: deploy_development
+  image: octopuslabs/gitlab-octocli
+  script: 
+    - VERSION_NUMBER=$(cat version.txt) 
+    - octo create-release --project="frontend" --ref="main" --channel="Default" --version="$VERSION_NUMBER" --deployTo="Development" --server="$OCTOPUS_SAMPLES_URL" --apiKey="$OCTOPUS_API_KEY" --space="Adam Close" --progress  --waitForDeployment
+
+deploy_test:
+  stage: deploy_test
+  image: octopuslabs/gitlab-octocli
+  script: 
+    - VERSION_NUMBER=$(cat version.txt) 
+    - octo deploy-release --project="frontend" --releaseNumber="$VERSION_NUMBER" --deployto="Test" --server="$OCTOPUS_SAMPLES_URL" --apiKey="$OCTOPUS_API_KEY" --space="Adam Close"  --progress --waitForDeployment 
+  dependencies:
+   - set-version
+   - build
+   - deploy_development
+   
+
+deploy_production:     
+  stage: deploy_production
+  environment: production
+  when: manual
+  dependencies:
+  - set-version
+  - build
+  - deploy_development
+  - deploy_test
+  allow_failure: false
+  script:
+    - echo "Deploying application to production..."
+    - echo "Application successfully deployed in production."
+
+
+

@@ -1,0 +1,26 @@
+stages:
+  - set-version
+  - deploy
+
+
+set-version:
+  stage: set-version
+  script:
+    - dayOfYear=$(date +%j)
+    - hour=$(date +%H)
+    - minutes=$(date +%M)
+    - seconds=$(date +%S)
+    - year=$(date +%y)
+    - echo "1.0.$year$dayOfYear.$hour$minutes$seconds" >> version.txt
+  artifacts:
+    paths:
+      [ version.txt ]
+
+
+deploy:
+  image: octopuslabs/gitlab-octocli
+  stage: deploy 
+  script:
+    - VERSION_NUMBER=$(cat version.txt) 
+    - octo pack --id="octopublite.database" --format="zip" --version="$VERSION_NUMBER" --basePath="./mysql/" --outFolder="tmp"
+    - octo push --package="tmp/octopublite.database.$VERSION_NUMBER.zip" --server="$OCTOPUS_SAMPLES_URL" --apiKey="$OCTOPUS_API_KEY" --space="Adam Close"

@@ -1,0 +1,57 @@
+step "mysql-create-database-if-not-exists" {
+    name = "MySQL - Create Database If Not Exists"
+
+    action {
+        properties = {
+            createDatabaseName = "#{Project.Database.Name}"
+            createMySQLServerName = "#{Azure.MySql.Server.Name}"
+            createPort = "3306"
+            createUsername = "#{Azure.MySql.Admin.User}"
+            createUserPassword = "#{Azure.MySql.Admin.Password}"
+            createUseSSL = "True"
+            Octopus.Action.Template.Id = "ActionTemplates-3211"
+            Octopus.Action.Template.Version = "8"
+        }
+        worker_pool = "azure-worker-pool"
+    }
+}
+
+step "flyway-database-migrations" {
+    name = "Flyway Database Migrations"
+
+    action {
+        properties = {
+            Flyway.Authentication.Method = "usernamepassword"
+            Flyway.Command.BaseLineOnMigrate = "false"
+            Flyway.Command.FailOnDrift = "true"
+            Flyway.Command.OutOfOrder = "false"
+            Flyway.Command.SkipExecutingMigrations = "false"
+            Flyway.Command.Target = "latest"
+            Flyway.Command.Value = "migrate"
+            Flyway.Database.User = "#{Azure.MySql.Admin.User}"
+            Flyway.Database.User.Password = "#{Azure.MySql.Admin.Password}"
+            Flyway.Package.Value = "{\"PackageId\":\"octopublite.database\",\"FeedId\":\"octopus-server-built-in\"}"
+            Flyway.Target.Url = "#{Project.Database.ConnectionString}"
+            Octopus.Action.Template.Id = "ActionTemplates-3214"
+            Octopus.Action.Template.Version = "14"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool = "hosted-ubuntu"
+
+        container {
+            feed = "docker-hub"
+            image = "octopuslabs/flyway-workertools"
+        }
+
+        packages "Flyway.Package.Value" {
+            acquisition_location = "Server"
+            feed = "octopus-server-built-in"
+            package_id = "octopublite.database"
+            properties = {
+                Extract = "True"
+                PackageParameterName = "Flyway.Package.Value"
+                SelectionMode = "deferred"
+            }
+        }
+    }
+}

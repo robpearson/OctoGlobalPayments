@@ -1,0 +1,27 @@
+step "deploy-frontend" {
+    name = "Deploy Frontend"
+    properties = {
+        Octopus.Action.TargetRoles = "demo-k8s-cluster"
+    }
+
+    action {
+        action_type = "Octopus.KubernetesDeployRawYaml"
+        properties = {
+            Octopus.Action.GitRepository.FilePathFilters = "manifests/api.yaml"
+            Octopus.Action.GitRepository.Source = "Project"
+            Octopus.Action.Kubernetes.DeploymentTimeout = "180"
+            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
+            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "manifests/api.yaml"
+            Octopus.Action.KubernetesContainers.Namespace = "#{Octopublite.namespace}"
+            Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool = "hosted-ubuntu"
+
+        container {
+            feed = "docker-hub"
+            image = "octopusdeploy/worker-tools:6.1.1-ubuntu.22.04"
+        }
+    }
+}

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-api-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-api
+  template:
+    metadata:
+      labels:
+        app: product-api
+    spec:
+      containers:
+      - name: product-api
+        image: adamoctoclose/octoretail-api:#{Octopus.Release.Number}
+        ports:
+        - containerPort: 3000
+        env:
+        - name: MYSQL_HOST
+          value: mysql
+        - name: MYSQL_USER
+          value: root
+        - name: MYSQL_PASSWORD
+          value: Mypassword01
+        - name: MYSQL_DATABASE
+          value: octokon
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-api-service
+spec:
+  selector:
+    app: product-api
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP

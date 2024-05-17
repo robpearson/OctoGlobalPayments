@@ -1,0 +1,27 @@
+variable "Octopus.Azure.Account" {
+    type = "AzureAccount"
+
+    value "octopetshop-azure-subscription" {
+        description = ""
+    }
+}
+
+variable "Project.CleanedSpaceName" {
+    value "#{Octopus.Space.Name | Replace \"[^a-zA-Z]+\" \"-\" | ToLower}" {}
+}
+
+variable "Project.CleanedEnvironmentName" {
+    value "#{Octopus.Environment.Name | Replace \"[^a-zA-Z]+\" \"-\" | ToLower}" {}
+}
+
+variable "Project.Database.Name" {
+    value "#{Project.CleanedSpaceName | Replace \"-\" \"_\"}_#{Project.CleanedEnvironmentName | Replace \"-\" \"_\"}_octopub" {}
+}
+
+variable "Project.Cluster.Namespace" {
+    value "#{Project.CleanedSpaceName}-#{Project.CleanedEnvironmentName}" {}
+}
+
+variable "Project.Database.ConnectionString" {
+    value "jdbc:mysql://#{Azure.MySql.Server.Name}:3306/#{Project.Database.Name}?useUnicode=true&permitMysqlScheme=true&useSSL=true&trustServerCertificate=true" {}
+}
