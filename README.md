@@ -1,2 +1,2 @@
-# OctoRetailPlatform
+# Octopus Demo Template
  
