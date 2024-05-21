@@ -17,7 +17,7 @@ set-version:
   artifacts:
     paths:
       [ version.txt ]
-
+ 
 build:
   stage: build
   image: docker:latest
