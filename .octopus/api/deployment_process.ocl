@@ -17,8 +17,14 @@ step "deploy-api-yaml" {
             Octopus.Action.KubernetesContainers.Namespace = "#{Project.Namespace}"
             Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
             Octopus.Action.Script.ScriptSource = "GitRepository"
+            OctopusUseBundledTooling = "False"
         }
         worker_pool = "hosted-ubuntu"
+
+        container {
+            feed = "docker-hub"
+            image = "octopuslabs/k8s-workertools"
+        }
 
         packages "octopublite-api" {
             acquisition_location = "NotAcquired"
