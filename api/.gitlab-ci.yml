@@ -5,12 +5,7 @@ stages:
 set-version:
   stage: set-version
   script:
-    - dayOfYear=$(date +%j)
-    - hour=$(date +%H)
-    - minutes=$(date +%M)
-    - seconds=$(date +%S)
-    - year=$(date +%y)
-    - echo "$(date +'%Y.%m.%d').$CI_JOB_ID" >> version.txt
+    - echo "1."$(date +%y%m%d)"."$(date +%H%M)" >> version.txt
   artifacts:
     paths:
       [ version.txt ]
