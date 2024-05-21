@@ -41,3 +41,11 @@ variable "spec:template:spec:containers:0:env:2:value" {
         environment = ["production"]
     }
 }
+
+variable "Octopus.Azure.Account" {
+    type = "AzureAccount"
+
+    value "octopus-demos-and-support" {
+        description = ""
+    }
+}
