@@ -9,8 +9,8 @@ step "mysql-create-database-if-not-exists" {
             createUsername = "#{Azure.MySql.Admin.User}"
             createUserPassword = "#{Azure.MySql.Admin.Password}"
             createUseSSL = "True"
-            Octopus.Action.Template.Id = "ActionTemplates-3211"
-            Octopus.Action.Template.Version = "8"
+            Octopus.Action.Template.Id = "ActionTemplates-2548"
+            Octopus.Action.Template.Version = "9"
         }
         worker_pool = "azure-worker-pool"
     }
