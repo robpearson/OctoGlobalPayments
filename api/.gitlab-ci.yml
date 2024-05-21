@@ -28,7 +28,7 @@ build:
     - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY
     - docker build -t $DOCKER_REGISTRY_USER/octopublite-api:$VERSION_NUMBER -f ./api/Dockerfile ./api
     - docker push $DOCKER_REGISTRY_USER/octopublite-api:$VERSION_NUMBER
- 
+
 # deploy_development:
 #   stage: deploy_development
 #   image: octopuslabs/gitlab-octocli
