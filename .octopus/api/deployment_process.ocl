@@ -20,10 +20,10 @@ step "deploy-api-yaml" {
         }
         worker_pool = "hosted-ubuntu"
 
-        packages "octoretail-api" {
+        packages "octopublite-api" {
             acquisition_location = "NotAcquired"
             feed = "docker-hub"
-            package_id = "adamoctoclose/octoretail-api"
+            package_id = "harrisonmeister/octopublite-api"
             properties = {
                 Extract = "False"
                 Purpose = "DockerImageReference"
