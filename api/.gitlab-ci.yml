@@ -27,8 +27,8 @@ build:
   script:
     - VERSION_NUMBER=$(cat version.txt) 
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t $CI_REGISTRY_IMAGE/octopublite-api:$VERSION_NUMBER -f ./api/Dockerfile ./api
-    - docker push $CI_REGISTRY_IMAGE/octopublite-api:$VERSION_NUMBER
+    - docker build -t $CI_REGISTRY_USER/octopublite-api:$VERSION_NUMBER -f ./api/Dockerfile ./api
+    - docker push $CI_REGISTRY_USER/octopublite-api:$VERSION_NUMBER
 
 # deploy_development:
 #   stage: deploy_development
