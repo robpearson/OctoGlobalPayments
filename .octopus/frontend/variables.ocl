@@ -24,3 +24,7 @@ variable "Octopus.Azure.Account" {
         description = ""
     }
 }
+
+variable "Project.Namespace" {
+    value "octopublite-mh" {}
+}
