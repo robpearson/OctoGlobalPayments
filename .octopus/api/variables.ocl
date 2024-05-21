@@ -49,3 +49,7 @@ variable "Octopus.Azure.Account" {
 variable "spec:template:spec:containers:0:image" {
     value "harrisonmeister/octopublite-api:#{Octopus.Action.Package[octopublite-api].PackageVersion}" {}
 }
+
+variable "Project.Namespace" {
+    value "octopublite-mh" {}
+}
