@@ -14,7 +14,7 @@ step "deploy-api-yaml" {
             Octopus.Action.Kubernetes.ServerSideApply.Enabled = "True"
             Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "False"
             Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "manifests/api.yaml"
-            Octopus.Action.KubernetesContainers.Namespace = "#{Octoretail.namespace}"
+            Octopus.Action.KubernetesContainers.Namespace = "#{Project.Namespace}"
             Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
             Octopus.Action.Script.ScriptSource = "GitRepository"
         }
