@@ -32,7 +32,7 @@ step "flyway-database-migrations" {
             Flyway.Database.User.Password = "#{Azure.MySql.Admin.Password}"
             Flyway.Package.Value = "{\"PackageId\":\"octopublite.database\",\"FeedId\":\"octopus-server-built-in\"}"
             Flyway.Target.Url = "#{Project.Database.ConnectionString}"
-            Octopus.Action.Template.Id = "ActionTemplates-3214"
+            Octopus.Action.Template.Id = "ActionTemplates-2549"
             Octopus.Action.Template.Version = "14"
             OctopusUseBundledTooling = "False"
         }
