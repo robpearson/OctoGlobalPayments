@@ -13,7 +13,8 @@ set-version:
     - minutes=$(date +%M)
     - seconds=$(date +%S)
     - year=$(date +%y)
-    - echo "1.0.$year$dayOfYear.$hour$minutes$seconds" >> version.txt
+    - $(date +'%Y.%m.%d')
+    - echo "$(date +'%Y.%m.%d').$CI_JOB_ID" >> version.txt
   artifacts:
     paths:
       [ version.txt ]
