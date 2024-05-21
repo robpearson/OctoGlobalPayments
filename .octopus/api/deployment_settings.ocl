@@ -2,4 +2,9 @@ connectivity_policy {
     allow_deployments_to_no_targets = true
 }
 
-versioning_strategy {}
+versioning_strategy {
+    donor_package {
+        package = "octopublite-api"
+        step = "deploy-api-yaml"
+    }
+}
