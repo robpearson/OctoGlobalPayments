@@ -14,10 +14,6 @@ variable "spec:template:spec:containers:0:env:3:value" {
     value "#{Project.Database.Name}" {}
 }
 
-variable "spec:template:spec:containers:0:image" {
-    value "adamoctoclose/octoretail-api:#{Octopus.Action.Package[octoretail-api].PackageVersion}" {}
-}
-
 variable "spec:template:spec:containers:0:env:0:value" {
     value "#{MySQL.Database.Host}" {}
 }
@@ -48,4 +44,8 @@ variable "Octopus.Azure.Account" {
     value "octopus-demos-and-support" {
         description = ""
     }
+}
+
+variable "spec:template:spec:containers:0:image" {
+    value "harrisonmeister/octopublite-api:#{Octopus.Action.Package[octopublite-api].PackageVersion}" {}
 }
