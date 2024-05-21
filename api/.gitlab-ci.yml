@@ -13,7 +13,7 @@ set-version:
     - minutes=$(date +%M)
     - seconds=$(date +%S)
     - year=$(date +%y)
-    - echo "$(date +'%Y.%m.%d').$CI_COMMIT_SHORT_SHA" >> version.txt
+    - echo "$(date +'%Y.%m.%d').1" >> version.txt
   artifacts:
     paths:
       [ version.txt ]
