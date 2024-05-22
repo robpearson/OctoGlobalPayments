@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: product-api
-        image: adamoctoclose/octoretail-api:#{Octopus.Release.Number}
+        image: harrisonmeister/octopublite-api:#{Octopus.Release.Number}
         ports:
         - containerPort: 3000
         env:
