@@ -3,16 +3,16 @@ frontend:
     include: frontend/.gitlab-ci.yml
     strategy: depend
   rules:
-    - changes: [frontend/*]
+    - changes: [frontend/**/*]
 api:
   trigger:
     include: api/.gitlab-ci.yml
     strategy: depend
   rules:
-    - changes: [api/*]
+    - changes: [api/**/*]
 database:
   trigger:
     include: mysql/.gitlab-ci.yml
     strategy: depend
   rules:
-    - changes: [mysql/*]
+    - changes: [mysql/**/*]
