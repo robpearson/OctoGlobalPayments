@@ -1,6 +1,6 @@
 stages:
   - set-version
-  - build
+  - build-container
   - build-information
   - push-build-information
 
@@ -12,7 +12,7 @@ set-version:
     paths:
       [ version.txt ]
  
-build:
+build-container:
   stage: build
   image: docker:latest
   services:
@@ -88,7 +88,4 @@ push-build-information:
     image: octopuslabs/gitlab-octocli
     script:
         - VERSION_NUMBER=$(cat version.txt)
-        - octo build-information --package-id=OctopusSamples.OctoPetShop.Web --version="$VERSION_NUMBER" --file=BuildInformation.json --server="$OCTOPUS_SERVER_URL" --apiKey="$OCTOPUS_API_KEY" --space="$OCTOPUS_SPACE_NAME"
-        - octo build-information --package-id=OctopusSamples.OctoPetShop.Database --version="$VERSION_NUMBER" --file=BuildInformation.json --server="$OCTOPUS_SERVER_URL" --apiKey="$OCTOPUS_API_KEY" --space="$OCTOPUS_SPACE_NAME"
-        - octo build-information --package-id=OctopusSamples.OctoPetShop.ProductService --version="$VERSION_NUMBER" --file=BuildInformation.json --server="$OCTOPUS_SERVER_URL" --apiKey="$OCTOPUS_API_KEY" --space="$OCTOPUS_SPACE_NAME"
-        - octo build-information --package-id=OctopusSamples.OctoPetShop.ShoppingCartService --version="$VERSION_NUMBER" --file=BuildInformation.json --server="$OCTOPUS_SERVER_URL" --apiKey="$OCTOPUS_API_KEY" --space="$OCTOPUS_SPACE_NAME"
+        - octo build-information --package-id="$DOCKER_REGISTRY_USER/octopublite-api" --version="$VERSION_NUMBER" --file=BuildInformation.json --server="$OCTOPUS_SERVER_URL" --apiKey="$OCTOPUS_API_KEY" --space="$OCTOPUS_SPACE_NAME"
