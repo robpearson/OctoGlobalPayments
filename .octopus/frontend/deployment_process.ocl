@@ -41,7 +41,7 @@ step "deploy-frontend-yaml" {
 
         container {
             feed = "docker-hub"
-            image = "octopuslabs/k8s-workertools"
+            image = "octopusdeploy/worker-tools:6.0-ubuntu.22.04"
         }
 
         packages "octopublite-frontend" {
