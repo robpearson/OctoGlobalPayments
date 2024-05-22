@@ -67,17 +67,19 @@ step "smoke-tests" {
     }
 }
 
-step "roll-back-on-failure" {
-    condition = "Failure"
-    name = "Roll Back On Failure"
+step "slack-notify-deployment-started" {
+    name = "Slack - Notify deployment started"
 
     action {
-        action_type = "Octopus.Script"
-        environments = ["production"]
         properties = {
-            Octopus.Action.Script.ScriptBody = "write-host \"roll back\" "
-            Octopus.Action.Script.ScriptSource = "Inline"
-            Octopus.Action.Script.Syntax = "PowerShell"
+            Octopus.Action.Template.Id = "ActionTemplates-2547"
+            Octopus.Action.Template.Version = "15"
+            ssn_Channel = "#{Notification.Slack.Channel}"
+            ssn_Color = "good"
+            ssn_HookUrl = "#{Notification.Slack.Webhook}"
+            ssn_IconUrl = "https://octopus.com/content/resources/favicon.png"
+            ssn_Title = "#{Project.Notification.DeploymentStartedTitle}"
+            ssn_Username = "Octopus Deploy"
         }
         worker_pool = "hosted-ubuntu"
     }
