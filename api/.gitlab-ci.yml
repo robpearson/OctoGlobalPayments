@@ -1,6 +1,8 @@
 stages:
   - set-version
   - build
+  - build-information
+  - push-build-information
 
 set-version:
   stage: set-version
@@ -20,3 +22,73 @@ build:
     - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY
     - docker build -t $DOCKER_REGISTRY_USER/octopublite-api:$VERSION_NUMBER -f ./api/Dockerfile ./api
     - docker push $DOCKER_REGISTRY_USER/octopublite-api:$VERSION_NUMBER
+
+build-information:
+    stage: build-information
+    image: mcr.microsoft.com/dotnet/core/sdk:3.1
+    script:
+        - |
+          pwsh -c '
+          $headers = @{ "PRIVATE-TOKEN" = $env:GITLAB_PAT}
+          #$headers = @{ "PRIVATE-TOKEN" = $env:CI_JOB_TOKEN}
+
+          $VERSION_NUMBER = Get-Content version.txt
+          $commits = @()
+
+          # Get previous pipeline runs
+          $previousRuns = (Invoke-RestMethod -Method Get -Uri "https://gitlab.com/api/v4/projects/$($env:CI_PROJECT_ID)/pipelines" -Headers $headers)
+
+          # The first entry of $previousRuns is the Pipeline Id of the current Pipeline, we want the on afterwards
+          if ($previousRuns.Count -eq 1)
+          {
+            # This is the first run of this pipeline, get all commits that happened before this pipeline ran
+            $commitDate = (Get-Date -Date $previousRuns[0].created_at -Format "o")
+            $commits = (Invoke-RestMethod -Method Get -Uri "https://gitlab.com/api/v4/projects/$($env:CI_PROJECT_ID)/repository/commits?until=`"$commitDate`"" -Headers $headers)
+          }
+          else
+          {
+            $commitDate = (Get-Date -Date $previousRuns[1].created_at -Format "o")
+            Write-Host "https://gitlab.com/api/v4/projects/$($env:CI_PROJECT_ID)/repository/commits?since=$commitDate"
+            $commits = (Invoke-RestMethod -Method Get -Uri "https://gitlab.com/api/v4/projects/$($env:CI_PROJECT_ID)/repository/commits?since=`"$commitDate`")" -Headers $headers)
+          }
+          
+
+          # Create payload
+          $jsonPayload = @{
+            PackageId = "$env:DOCKER_REGISTRY_USER/octopublite-api"
+            Version = "$($VERSION_NUMBER)"
+            Branch = $env:CI_COMMIT_BRANCH
+            BuildUrl = $env:CI_PIPELINE_URL
+            BuildNumber = $env:CI_PIPELINE_ID
+            BuildEnvironment = "GitLabCI"
+            VcsCommitNumber = $env:CI_COMMIT_SHA
+            VcsType = "Git"
+            VcsRoot = $env:CI_PROJECT_URL
+            Commits = @()
+          }
+
+          # Loop through commits and add to collection
+          foreach ($commit in $commits)
+          {
+            $commitInfo = @{
+              Id = $commit.id
+              LinkUrl = $commit.web_url
+              Comment = $commit.message
+            }
+            $jsonPayload.Commits += $commitInfo
+          }
+          
+          # Write information to file
+          Add-Content -Path "BuildInformation.json" -Value "$($jsonPayload | ConvertTo-JSON -Depth 10)"'
+    artifacts:
+      paths: [ BuildInformation.json ]
+      
+push-build-information:
+    stage: push-build-information
+    image: octopuslabs/gitlab-octocli
+    script:
+        - VERSION_NUMBER=$(cat version.txt)
+        - octo build-information --package-id=OctopusSamples.OctoPetShop.Web --version="$VERSION_NUMBER" --file=BuildInformation.json --server="$OCTOPUS_SERVER_URL" --apiKey="$OCTOPUS_API_KEY" --space="$OCTOPUS_SPACE_NAME"
+        - octo build-information --package-id=OctopusSamples.OctoPetShop.Database --version="$VERSION_NUMBER" --file=BuildInformation.json --server="$OCTOPUS_SERVER_URL" --apiKey="$OCTOPUS_API_KEY" --space="$OCTOPUS_SPACE_NAME"
+        - octo build-information --package-id=OctopusSamples.OctoPetShop.ProductService --version="$VERSION_NUMBER" --file=BuildInformation.json --server="$OCTOPUS_SERVER_URL" --apiKey="$OCTOPUS_API_KEY" --space="$OCTOPUS_SPACE_NAME"
+        - octo build-information --package-id=OctopusSamples.OctoPetShop.ShoppingCartService --version="$VERSION_NUMBER" --file=BuildInformation.json --server="$OCTOPUS_SERVER_URL" --apiKey="$OCTOPUS_API_KEY" --space="$OCTOPUS_SPACE_NAME"
