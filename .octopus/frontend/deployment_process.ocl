@@ -63,7 +63,11 @@ step "smoke-tests" {
     action "run-smoke-tests" {
         action_type = "Octopus.Script"
         properties = {
-            Octopus.Action.Script.ScriptBody = "write-host \"Smoke test application\" "
+            Octopus.Action.Script.ScriptBody = <<-EOT
+                Write-Host "Simulate smoke tests of application" 
+                Start-Sleep -Seconds 10
+                Write-Host "Completed smoke tests" 
+                EOT
             Octopus.Action.Script.ScriptSource = "Inline"
             Octopus.Action.Script.Syntax = "PowerShell"
         }
