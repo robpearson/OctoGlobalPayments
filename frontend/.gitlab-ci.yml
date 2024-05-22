@@ -1,67 +1,91 @@
 stages:
   - set-version
-  - build
-  - deploy_development
-  - deploy_test
-  - deploy_production
-
+  - build-container
+  - build-information
+  - push-build-information
 
 set-version:
   stage: set-version
   script:
-    - dayOfYear=$(date +%j)
-    - hour=$(date +%H)
-    - minutes=$(date +%M)
-    - seconds=$(date +%S)
-    - year=$(date +%y)
-    - echo "1.0.$year$dayOfYear.$hour$minutes$seconds" >> version.txt
+    - echo "1.$(date +%y%m%d).$(date +%H%M)" >> version.txt
   artifacts:
     paths:
       [ version.txt ]
-
-build:
-  stage: build
+ 
+build-container:
+  stage: build-container
   image: docker:latest
   services:
     - docker:dind
   script:
     - VERSION_NUMBER=$(cat version.txt) 
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t $CI_REGISTRY_IMAGE/octopublite-frontend:$VERSION_NUMBER -f ./frontend/Dockerfile ./frontend
-    - docker push $CI_REGISTRY_IMAGE/octopublite-frontend:$VERSION_NUMBER
+    - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY
+    - docker build -t $DOCKER_REGISTRY_USER/octopublite-frontend:$VERSION_NUMBER -f ./frontend/Dockerfile ./frontend
+    - docker push $DOCKER_REGISTRY_USER/octopublite-frontend:$VERSION_NUMBER
 
-deploy_development:
-  stage: deploy_development
-  image: octopuslabs/gitlab-octocli
-  script: 
-    - VERSION_NUMBER=$(cat version.txt) 
-    - octo create-release --project="frontend" --ref="main" --channel="Default" --version="$VERSION_NUMBER" --deployTo="Development" --server="$OCTOPUS_SAMPLES_URL" --apiKey="$OCTOPUS_API_KEY" --space="Adam Close" --progress  --waitForDeployment
+build-information:
+    stage: build-information
+    image: mcr.microsoft.com/dotnet/core/sdk:3.1
+    script:
+        - |
+          pwsh -c '
+          $headers = @{ "PRIVATE-TOKEN" = $env:GITLAB_PAT}
+          #$headers = @{ "PRIVATE-TOKEN" = $env:CI_JOB_TOKEN}
 
-deploy_test:
-  stage: deploy_test
-  image: octopuslabs/gitlab-octocli
-  script: 
-    - VERSION_NUMBER=$(cat version.txt) 
-    - octo deploy-release --project="frontend" --releaseNumber="$VERSION_NUMBER" --deployto="Test" --server="$OCTOPUS_SAMPLES_URL" --apiKey="$OCTOPUS_API_KEY" --space="Adam Close"  --progress --waitForDeployment 
-  dependencies:
-   - set-version
-   - build
-   - deploy_development
-   
+          $VERSION_NUMBER = Get-Content version.txt
+          $commits = @()
 
-deploy_production:     
-  stage: deploy_production
-  environment: production
-  when: manual
-  dependencies:
-  - set-version
-  - build
-  - deploy_development
-  - deploy_test
-  allow_failure: false
-  script:
-    - echo "Deploying application to production..."
-    - echo "Application successfully deployed in production."
+          # Get previous pipeline runs
+          $previousRuns = (Invoke-RestMethod -Method Get -Uri "https://gitlab.com/api/v4/projects/$($env:CI_PROJECT_ID)/pipelines" -Headers $headers)
 
+          # The first entry of $previousRuns is the Pipeline Id of the current Pipeline, we want the on afterwards
+          if ($previousRuns.Count -eq 1)
+          {
+            # This is the first run of this pipeline, get all commits that happened before this pipeline ran
+            $commitDate = (Get-Date -Date $previousRuns[0].created_at -Format "o")
+            $commits = (Invoke-RestMethod -Method Get -Uri "https://gitlab.com/api/v4/projects/$($env:CI_PROJECT_ID)/repository/commits?until=`"$commitDate`"" -Headers $headers)
+          }
+          else
+          {
+            $commitDate = (Get-Date -Date $previousRuns[1].created_at -Format "o")
+            Write-Host "https://gitlab.com/api/v4/projects/$($env:CI_PROJECT_ID)/repository/commits?since=$commitDate"
+            $commits = (Invoke-RestMethod -Method Get -Uri "https://gitlab.com/api/v4/projects/$($env:CI_PROJECT_ID)/repository/commits?since=`"$commitDate`")" -Headers $headers)
+          }
+          
 
+          # Create payload
+          $jsonPayload = @{
+            PackageId = "$env:DOCKER_REGISTRY_USER/octopublite-frontend"
+            Version = "$($VERSION_NUMBER)"
+            Branch = $env:CI_COMMIT_BRANCH
+            BuildUrl = $env:CI_PIPELINE_URL
+            BuildNumber = $env:CI_PIPELINE_ID
+            BuildEnvironment = "GitLabCI"
+            VcsCommitNumber = $env:CI_COMMIT_SHA
+            VcsType = "Git"
+            VcsRoot = $env:CI_PROJECT_URL
+            Commits = @()
+          }
 
+          # Loop through commits and add to collection
+          foreach ($commit in $commits)
+          {
+            $commitInfo = @{
+              Id = $commit.id
+              LinkUrl = $commit.web_url
+              Comment = $commit.message
+            }
+            $jsonPayload.Commits += $commitInfo
+          }
+          
+          # Write information to file
+          Add-Content -Path "BuildInformation.json" -Value "$($jsonPayload | ConvertTo-JSON -Depth 10)"'
+    artifacts:
+      paths: [ BuildInformation.json ]
+      
+push-build-information:
+    stage: push-build-information
+    image: octopuslabs/gitlab-octocli
+    script:
+        - VERSION_NUMBER=$(cat version.txt)
+        - octo build-information --package-id="$DOCKER_REGISTRY_USER/octopublite-frontend" --version="$VERSION_NUMBER" --file=BuildInformation.json --server="$OCTOPUS_SERVER_URL" --apiKey="$OCTOPUS_API_KEY" --space="$OCTOPUS_SPACE_NAME"
