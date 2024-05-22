@@ -1,26 +1,96 @@
 stages:
   - set-version
-  - deploy
-
+  - create-package
+  - build-information
+  - push-build-information
+  - create-release
 
 set-version:
   stage: set-version
   script:
-    - dayOfYear=$(date +%j)
-    - hour=$(date +%H)
-    - minutes=$(date +%M)
-    - seconds=$(date +%S)
-    - year=$(date +%y)
-    - echo "1.0.$year$dayOfYear.$hour$minutes$seconds" >> version.txt
+    - echo "1.$(date +%y%m%d).$(date +%H%M)" >> version.txt
   artifacts:
     paths:
       [ version.txt ]
-
-
-deploy:
+      
+create-package:
   image: octopuslabs/gitlab-octocli
-  stage: deploy 
+  stage: create-package 
   script:
     - VERSION_NUMBER=$(cat version.txt) 
-    - octo pack --id="octopublite.database" --format="zip" --version="$VERSION_NUMBER" --basePath="./mysql/" --outFolder="tmp"
-    - octo push --package="tmp/octopublite.database.$VERSION_NUMBER.zip" --server="$OCTOPUS_SAMPLES_URL" --apiKey="$OCTOPUS_API_KEY" --space="Adam Close"
+    - octo pack --id="octopublite-database" --format="zip" --version="$VERSION_NUMBER" --basePath="./mysql/" --outFolder="tmp"
+    - octo push --package="tmp/octopublite-database.$VERSION_NUMBER.zip" --server="$OCTOPUS_SERVER_URL" --apiKey="$OCTOPUS_API_KEY" --space="$OCTOPUS_SPACE_NAME"
+
+build-information:
+    stage: build-information
+    image: mcr.microsoft.com/dotnet/core/sdk:3.1
+    script:
+        - |
+          pwsh -c '
+          $headers = @{ "PRIVATE-TOKEN" = $env:GITLAB_PAT}
+          #$headers = @{ "PRIVATE-TOKEN" = $env:CI_JOB_TOKEN}
+
+          $VERSION_NUMBER = Get-Content version.txt
+          $commits = @()
+
+          # Get previous pipeline runs
+          $previousRuns = (Invoke-RestMethod -Method Get -Uri "https://gitlab.com/api/v4/projects/$($env:CI_PROJECT_ID)/pipelines" -Headers $headers)
+
+          # The first entry of $previousRuns is the Pipeline Id of the current Pipeline, we want the on afterwards
+          if ($previousRuns.Count -eq 1)
+          {
+            # This is the first run of this pipeline, get all commits that happened before this pipeline ran
+            $commitDate = (Get-Date -Date $previousRuns[0].created_at -Format "o")
+            $commits = (Invoke-RestMethod -Method Get -Uri "https://gitlab.com/api/v4/projects/$($env:CI_PROJECT_ID)/repository/commits?until=`"$commitDate`"" -Headers $headers)
+          }
+          else
+          {
+            $commitDate = (Get-Date -Date $previousRuns[1].created_at -Format "o")
+            Write-Host "https://gitlab.com/api/v4/projects/$($env:CI_PROJECT_ID)/repository/commits?since=$commitDate"
+            $commits = (Invoke-RestMethod -Method Get -Uri "https://gitlab.com/api/v4/projects/$($env:CI_PROJECT_ID)/repository/commits?since=`"$commitDate`")" -Headers $headers)
+          }
+          
+
+          # Create payload
+          $jsonPayload = @{
+            PackageId = "octopublist-database"
+            Version = "$($VERSION_NUMBER)"
+            Branch = $env:CI_COMMIT_BRANCH
+            BuildUrl = $env:CI_PIPELINE_URL
+            BuildNumber = $env:CI_PIPELINE_ID
+            BuildEnvironment = "GitLabCI"
+            VcsCommitNumber = $env:CI_COMMIT_SHA
+            VcsType = "Git"
+            VcsRoot = $env:CI_PROJECT_URL
+            Commits = @()
+          }
+
+          # Loop through commits and add to collection
+          foreach ($commit in $commits)
+          {
+            $commitInfo = @{
+              Id = $commit.id
+              LinkUrl = $commit.web_url
+              Comment = $commit.message
+            }
+            $jsonPayload.Commits += $commitInfo
+          }
+          
+          # Write information to file
+          Add-Content -Path "BuildInformation.json" -Value "$($jsonPayload | ConvertTo-JSON -Depth 10)"'
+    artifacts:
+      paths: [ BuildInformation.json ]
+      
+push-build-information:
+    stage: push-build-information
+    image: octopuslabs/gitlab-octocli
+    script:
+        - VERSION_NUMBER=$(cat version.txt)
+        - octo build-information --package-id="octopublite-database" --version="$VERSION_NUMBER" --file=BuildInformation.json --server="$OCTOPUS_SERVER_URL" --apiKey="$OCTOPUS_API_KEY" --space="$OCTOPUS_SPACE_NAME"
+
+create-release:
+  stage: create-release
+  image: octopuslabs/gitlab-octocli
+  script: 
+    - VERSION_NUMBER=$(cat version.txt) 
+    - octo create-release --project="OctopubLite-Database" --ref="main" --channel="Default" --version="$VERSION_NUMBER" --server="$OCTOPUS_SERVER_URL" --apiKey="$OCTOPUS_API_KEY" --space="$OCTOPUS_SPACE_NAME"
