@@ -17,12 +17,12 @@ step "slack-notify-deployment-started" {
 }
 
 step "deploy-frontend-yaml" {
-    name = "Deploy Frontend YAML"
+    name = "Deploy Frontend Service"
     properties = {
         Octopus.Action.TargetRoles = "demo-k8s-cluster"
     }
 
-    action {
+    action "deploy-frontend-service" {
         action_type = "Octopus.KubernetesDeployRawYaml"
         properties = {
             Octopus.Action.GitRepository.FilePathFilters = "manifests/frontend.yaml"

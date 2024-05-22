@@ -25,6 +25,6 @@ connectivity_policy {
 versioning_strategy {
     donor_package {
         package = "octopublite-frontend"
-        step = "deploy-frontend-yaml"
+        step = "Deploy Frontend Service"
     }
 }
