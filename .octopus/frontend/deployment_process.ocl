@@ -58,9 +58,9 @@ step "deploy-frontend-yaml" {
 }
 
 step "smoke-tests" {
-    name = "Smoke Tests"
+    name = "Run Smoke Tests"
 
-    action {
+    action "run-smoke-tests" {
         action_type = "Octopus.Script"
         properties = {
             Octopus.Action.Script.ScriptBody = "write-host \"Smoke test application\" "
@@ -68,5 +68,25 @@ step "smoke-tests" {
             Octopus.Action.Script.Syntax = "PowerShell"
         }
         worker_pool = "hosted-windows"
+    }
+}
+
+step "notify-status-of-deployment" {
+    condition = "Always"
+    name = "Notify status of deployment"
+
+    action {
+        properties = {
+            Octopus.Action.Template.Id = "ActionTemplates-2547"
+            Octopus.Action.Template.Version = "15"
+            ssn_Channel = "#{Notification.Slack.Channel}"
+            ssn_Color = "#{Notification.Slack.Color}"
+            ssn_HookUrl = "#{Notification.Slack.Webhook}"
+            ssn_IconUrl = "https://octopus.com/content/resources/favicon.png"
+            ssn_Message = "#{Notification.Slack.Status.Message}"
+            ssn_Title = "#{Notification.Slack.Status.Deployment.Title}"
+            ssn_Username = "Octopus Deploy"
+        }
+        worker_pool = "hosted-ubuntu"
     }
 }
