@@ -1,10 +1,10 @@
 step "deploy-api-yaml" {
-    name = "Deploy API YAML"
+    name = "Deploy API service"
     properties = {
         Octopus.Action.TargetRoles = "demo-k8s-cluster"
     }
 
-    action {
+    action "deploy-api-service" {
         action_type = "Octopus.KubernetesDeployRawYaml"
         properties = {
             Octopus.Action.GitRepository.FilePathFilters = "manifests/api.yaml"

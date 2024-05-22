@@ -25,6 +25,6 @@ connectivity_policy {
 versioning_strategy {
     donor_package {
         package = "octopublite-api"
-        step = "deploy-api-yaml"
+        step = "Deploy API service"
     }
 }
