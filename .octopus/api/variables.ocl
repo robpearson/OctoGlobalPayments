@@ -14,26 +14,6 @@ variable "spec:template:spec:containers:0:env:3:value" {
     value "#{Project.Database.Name}" {}
 }
 
-variable "spec:template:spec:containers:0:env:0:value" {
-    value "#{MySQL.Database.Host}" {}
-}
-
-variable "spec:template:spec:containers:0:env:2:value" {
-    value "#{MySQL.Database.Password}" {
-        environment = ["development"]
-    }
-
-    value "#{MySQL.Database.Password}" {
-        description = ""
-        environment = ["test"]
-    }
-
-    value "#{MySQL.Database.Password}" {
-        description = ""
-        environment = ["production"]
-    }
-}
-
 variable "Octopus.Azure.Account" {
     type = "AzureAccount"
 
@@ -50,6 +30,26 @@ variable "Project.Namespace" {
     value "octopublite-mh" {}
 }
 
+variable "spec:template:spec:containers:0:env:0:value" {
+    value "#{Azure.MySql.Server.Name}" {}
+}
+
 variable "spec:template:spec:containers:0:env:1:value" {
-    value "#{MySQL.Database.User}" {}
+    value "#{Azure.MySql.Admin.User}" {}
+}
+
+variable "spec:template:spec:containers:0:env:2:value" {
+    value "#{Azure.MySql.Admin.Password}" {
+        environment = ["development"]
+    }
+
+    value "#{Azure.MySql.Admin.Password}" {
+        description = ""
+        environment = ["test"]
+    }
+
+    value "#{Azure.MySql.Admin.Password}" {
+        description = ""
+        environment = ["production"]
+    }
 }
