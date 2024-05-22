@@ -13,7 +13,7 @@ set-version:
       [ version.txt ]
  
 build-container:
-  stage: build
+  stage: build-container
   image: docker:latest
   services:
     - docker:dind
