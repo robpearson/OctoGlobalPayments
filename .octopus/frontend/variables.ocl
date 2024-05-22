@@ -28,3 +28,13 @@ variable "Project.Namespace" {
 variable "spec:template:spec:containers:0:image" {
     value "harrisonmeister/octopublite-frontend:#{Octopus.Action.Package[octopublite-frontend].PackageVersion}" {}
 }
+
+variable "Project.Notification.DeploymentStartedTitle" {
+    value {
+        value = <<-EOT
+                :sleuth_or_spy: #{Octopus.Project.Name} `#{Octopus.Release.Number}` to `#{Octopus.Environment.Name}` has started.
+                
+                #{Project.Notification.TaskLink}
+                EOT
+    }
+}
