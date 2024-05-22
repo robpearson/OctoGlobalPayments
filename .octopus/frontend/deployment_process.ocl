@@ -1,14 +1,18 @@
-step "production-deployment-notification" {
-    name = "Production Deployment Notification"
+step "slack-notify-deployment-started" {
+    name = "Slack - Notify deployment started"
 
     action {
-        action_type = "Octopus.Email"
-        environments = ["production"]
         properties = {
-            Octopus.Action.Email.Subject = "#{Octopus.Project.Name}: #{Octopus.Environment.Name} Deployment"
-            Octopus.Action.Email.To = "adam.close@octopus.com"
-            Octopus.Action.RunOnServer = "false"
+            Octopus.Action.Template.Id = "ActionTemplates-2547"
+            Octopus.Action.Template.Version = "15"
+            ssn_Channel = "#{Notification.Slack.Channel}"
+            ssn_Color = "good"
+            ssn_HookUrl = "#{Notification.Slack.Webhook}"
+            ssn_IconUrl = "https://octopus.com/content/resources/favicon.png"
+            ssn_Title = "#{Project.Notification.DeploymentStartedTitle}"
+            ssn_Username = "Octopus Deploy"
         }
+        worker_pool = "hosted-ubuntu"
     }
 }
 
@@ -64,23 +68,5 @@ step "smoke-tests" {
             Octopus.Action.Script.Syntax = "PowerShell"
         }
         worker_pool = "hosted-windows"
-    }
-}
-
-step "slack-notify-deployment-started" {
-    name = "Slack - Notify deployment started"
-
-    action {
-        properties = {
-            Octopus.Action.Template.Id = "ActionTemplates-2547"
-            Octopus.Action.Template.Version = "15"
-            ssn_Channel = "#{Notification.Slack.Channel}"
-            ssn_Color = "good"
-            ssn_HookUrl = "#{Notification.Slack.Webhook}"
-            ssn_IconUrl = "https://octopus.com/content/resources/favicon.png"
-            ssn_Title = "#{Project.Notification.DeploymentStartedTitle}"
-            ssn_Username = "Octopus Deploy"
-        }
-        worker_pool = "hosted-ubuntu"
     }
 }
