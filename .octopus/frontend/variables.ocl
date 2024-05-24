@@ -38,3 +38,13 @@ variable "Project.Notification.DeploymentStartedTitle" {
                 EOT
     }
 }
+
+variable "Project.Database.Name" {
+    value "Dev" {
+        environment = ["development"]
+    }
+
+    value "Test" {
+        environment = ["test"]
+    }
+}
