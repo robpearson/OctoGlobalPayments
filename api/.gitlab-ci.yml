@@ -30,7 +30,6 @@ build-information:
         - |
           pwsh -c '
           $headers = @{ "PRIVATE-TOKEN" = $env:GITLAB_PAT}
-          #$headers = @{ "PRIVATE-TOKEN" = $env:CI_JOB_TOKEN}
 
           $VERSION_NUMBER = Get-Content version.txt
           $commits = @()
