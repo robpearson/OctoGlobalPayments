@@ -1,20 +1,40 @@
-step "hello-world-using-powershell" {
-    name = "Hello world (using PowerShell)"
+step "deploy-api-yaml" {
+    name = "Deploy API service"
+    properties = {
+        Octopus.Action.TargetRoles = "demo-k8s-cluster"
+    }
 
-    action {
-        action_type = "Octopus.Script"
-        is_required = true
+    action "deploy-api-service" {
+        action_type = "Octopus.KubernetesDeployRawYaml"
         properties = {
-            Octopus.Action.RunOnServer = "true"
-            Octopus.Action.Script.ScriptBody = <<-EOT
-                Write-Host 'Hello world, using PowerShell'
-                
-                #TODO: Experiment with steps of your own :)
-                
-                Write-Host '[Learn more about the types of steps available in Octopus](https://oc.to/OnboardingAddStepsLearnMore)'
-                EOT
-            Octopus.Action.Script.ScriptSource = "Inline"
-            Octopus.Action.Script.Syntax = "PowerShell"
+            Octopus.Action.GitRepository.FilePathFilters = "manifests/api.yaml"
+            Octopus.Action.GitRepository.Source = "Project"
+            Octopus.Action.Kubernetes.DeploymentTimeout = "180"
+            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
+            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "True"
+            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "False"
+            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "manifests/api.yaml"
+            Octopus.Action.KubernetesContainers.Namespace = "#{Project.Namespace}"
+            Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool = "hosted-ubuntu"
+
+        container {
+            feed = "docker-hub"
+            image = "octopusdeploy/worker-tools:6.0-ubuntu.22.04"
+        }
+
+        packages "octopublite-api" {
+            acquisition_location = "NotAcquired"
+            feed = "docker-hub"
+            package_id = "harrisonmeister/octopublite-api"
+            properties = {
+                Extract = "False"
+                Purpose = "DockerImageReference"
+                SelectionMode = "immediate"
+            }
         }
     }
 }
