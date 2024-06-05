@@ -1,12 +1,11 @@
-name: Feature Branch
+name: Main CI 
 
 on:
   push:
     branches:    
-      - '*'         # matches every branch that doesn't contain a '/'
-      - '*/*'       # matches every branch containing a single '/'
-      - '**'        # matches every branch
-      - '!main'   # excludes master
+      - 'main'      # main branch
+      - 'FINT-'     # Feature branches
+      - 'rp-'       # Rob Pearson demo branches
 
 env:
   OCTOPUS_URL: ${{ secrets.OCTOPUS_URL }}
@@ -39,13 +38,6 @@ jobs:
         with:
           packages: |
             ./packaging/octopayments-frontend.${{ env.PACKAGE_VERSION }}.zip
-
-      - uses: OctopusDeploy/push-build-information-action@v3
-        name: Push Build Information
-        with:
-          version: ${{ env.PACKAGE_VERSION }}
-          packages: |
-            octopayments-frontend
           
       - name: Create Octopus Release
         uses: OctopusDeploy/create-release-action@v3
